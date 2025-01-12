@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -15,12 +16,12 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -36,8 +37,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.droidos.playground.ui.theme.ComposeanimationplaygroundTheme
 
@@ -67,7 +74,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        TextAnimatedContent()
+                        TestCrossFade()
                     }
                 }
             }
@@ -226,4 +233,103 @@ fun TextAnimatedContent() {
         }
     }
 
+}
+
+@Composable
+fun TestLooperManager() {
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        onClick = { expanded = !expanded }
+    ) {
+        AnimatedContent(
+            targetState = expanded,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(150, 150)) togetherWith
+                        fadeOut(animationSpec = tween(150)) using
+                        SizeTransform { initialSize, targetSize ->
+                            if (targetState) {
+                                keyframes {
+                                    // Expand horizontally first.
+                                    IntSize(targetSize.width, initialSize.height) at 150
+                                    durationMillis = 300
+                                }
+                            } else {
+                                keyframes {
+                                    // Shrink vertically first.
+                                    IntSize(initialSize.width, targetSize.height) at 150
+                                    durationMillis = 300
+                                }
+                            }
+                        }
+            },
+            label = "size transform"
+        ) { targetExpanded ->
+            if (targetExpanded) Expanded()
+            else ContentIcon()
+
+        }
+    }
+
+}
+
+@Composable
+fun ContentIcon() {
+    Icon(
+        imageVector = Icons.Default.KeyboardArrowDown,
+        contentDescription = null
+    )
+}
+
+@Composable
+fun Expanded() {
+    Text(text = "Here's the expanded content to view all features of the animated content! it looks amazing")
+}
+
+@Composable
+fun TestCrossFade() {
+    var currentPage by remember { mutableStateOf("A") }
+    Button(
+        onClick = { currentPage = if (currentPage == "A") "B" else "A" }) {
+        Text("Toggle")
+    }
+    Spacer(modifier = Modifier.size(16.dp))
+
+    Crossfade(
+        targetState = currentPage,
+        label = "cross fade"
+    ) { screen ->
+        when (screen) {
+            "A" -> LayoutPageA()
+            "B" -> LayoutPageB()
+        }
+    }
+}
+
+@Composable
+fun LayoutPageA() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Magenta)
+    ) {
+        Text(
+            modifier = Modifier.align(Alignment.Center),
+            text = "Page A"
+        )
+    }
+}
+
+@Composable
+fun LayoutPageB() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Gray)
+    ) {
+        Text(
+            modifier = Modifier.align(Alignment.Center),
+            text = "Page B"
+        )
+    }
 }
